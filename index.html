@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>Compuerta MRC</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icono-192.png">
+<style>
+  :root { --ink:#111; --muted:#555; --line:#bbb; --soft:#f1f1f1; --ok:#0b6b2f; --ok-bg:#dff3e5;
+          --warn:#7a4b00; --warn-bg:#fdeccb; --bad:#a11616; --bad-bg:#fbe0e0; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: #fff; color: var(--ink); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 12px 16px 64px; }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 17px; margin: 0 0 8px; }
+  section { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { font-size: 13px; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: var(--soft); }
+  .chip[data-tone=ok] { background: var(--ok-bg); color: var(--ok); }
+  .chip[data-tone=warn] { background: var(--warn-bg); color: var(--warn); }
+  .chip[data-tone=bad] { background: var(--bad-bg); color: var(--bad); }
+  button, .filebtn { font: inherit; font-weight: 600; min-height: 52px; padding: 8px 12px; border-radius: 6px;
+    border: 2px solid var(--ink); background: #fff; color: var(--ink); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; text-align: center; position: relative; }
+  button.primary { background: var(--ink); color: #fff; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:focus-visible, textarea:focus-visible, .filebtn:focus-within { outline: 3px solid #1a5fd0; outline-offset: 2px; }
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 8px; }
+  .filebtn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .note { padding: 10px 12px; border-radius: 6px; margin-top: 10px; font-size: 15px; background: var(--soft); }
+  .note[data-tone=ok] { background: var(--ok-bg); color: var(--ok); }
+  .note[data-tone=warn] { background: var(--warn-bg); color: var(--warn); }
+  .note[data-tone=bad] { background: var(--bad-bg); color: var(--bad); }
+  .posts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .posts button { min-height: 56px; padding: 4px; flex-direction: column; font-size: 15px; border-width: 1px; }
+  .posts button small { font-weight: 400; font-size: 11px; }
+  .posts button[data-state=guardado] { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+  .posts button[data-state=enviado] { background: var(--ok-bg); color: var(--ok); border-color: var(--ok); }
+  .posts button[aria-pressed=true] { outline: 3px solid #1a5fd0; outline-offset: 1px; }
+  .editor { margin-top: 12px; padding: 12px; border: 2px solid var(--ink); border-radius: 6px; }
+  .grid21 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 4px 0 10px; }
+  .grid21 button { min-height: 44px; padding: 2px; font-size: 14px; border-width: 1px; }
+  .grid21 button[aria-pressed=true] { background: var(--ink); color: #fff; }
+  label.field { display: block; font-size: 14px; font-weight: 600; margin-top: 6px; }
+  textarea { width: 100%; min-height: 64px; font: inherit; margin-top: 4px; padding: 8px; border: 1px solid #666; border-radius: 6px; }
+  img.thumb { max-width: 120px; max-height: 120px; border-radius: 4px; margin-top: 8px; display: block; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+  .metric { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+  .metric b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .metric span { font-size: 13px; color: var(--muted); }
+  ol.log { list-style: none; padding: 0; margin: 8px 0 0; font-size: 14px; }
+  ol.log li { border-top: 1px solid var(--line); padding: 6px 0; }
+  ol.log .t { color: var(--muted); font-variant-numeric: tabular-nums; }
+  ol.log .r-ok { color: var(--ok); font-weight: 700; }
+  ol.log .r-falla { color: var(--bad); font-weight: 700; }
+  #gis { min-height: 44px; margin-top: 8px; }
+  a { color: #1a4fb0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Compuerta MRC</h1>
+  <p class="sub">Prueba <code>DIG-MRC-23</code>. Postes de ensayo, sin datos del proyecto. Escribe solo en el libro de ensayo.</p>
+  <div class="chips" aria-live="polite">
+    <span class="chip" id="c-install">…</span>
+    <span class="chip" id="c-net">…</span>
+    <span class="chip" id="c-sw">…</span>
+    <span class="chip" id="c-persist">…</span>
+  </div>
+  <div class="row"><button id="install" type="button" hidden>Instalar en el teléfono</button></div>
+  <div id="cfg-note" class="note" data-tone="warn" hidden>Falta la configuración. Abre el enlace de configuración que te dio el agente.</div>
+
+  <section aria-labelledby="h-id">
+    <h2 id="h-id">1. Identidad y pasarelas</h2>
+    <div id="gis"></div>
+    <p class="sub" id="who">Sin identificar.</p>
+    <div class="row">
+      <button id="t-a" type="button">Prueba A: pasarela para cualquiera</button>
+      <button id="t-b" type="button">Prueba B: pasarela solo OSI</button>
+      <button id="t-c" type="button">Prueba C: escribir con la API de Sheets</button>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-cap">
+    <h2 id="h-cap">2. Captura de ensayo</h2>
+    <p class="sub">Toca un poste, elige los plomos y guarda. Se guarda en el teléfono aunque no haya señal.</p>
+    <div class="posts" id="posts"></div>
+    <div class="editor" id="editor" hidden>
+      <b id="ed-title"></b>
+      <label class="field">Plomo E-O (%)</label><div class="grid21" id="ed-eo"></div>
+      <label class="field">Plomo N-S (%)</label><div class="grid21" id="ed-ns"></div>
+      <label class="field">Observaciones<textarea id="ed-obs"></textarea></label>
+      <div class="row">
+        <label class="filebtn">Tomar foto<input id="ed-photo" type="file" accept="image/*" capture="environment"></label>
+        <button id="ed-save" type="button" class="primary">Guardar</button>
+      </div>
+      <img id="ed-thumb" class="thumb" alt="Foto del poste" hidden>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-send">
+    <h2 id="h-send">3. Envío al libro de ensayo</h2>
+    <div class="metrics">
+      <div class="metric"><b id="m-rows">0</b><span>postes por enviar</span></div>
+      <div class="metric"><b id="m-photos">0</b><span>fotos por enviar</span></div>
+      <div class="metric"><b id="m-saved">0</b><span>postes guardados en el teléfono</span></div>
+      <div class="metric"><b id="m-bytes">—</b><span>espacio usado</span></div>
+    </div>
+    <div class="row">
+      <button id="send" type="button" class="primary">Enviar ahora</button>
+      <button id="resend" type="button">Reenviar todo (duplicados)</button>
+      <button id="burst" type="button">Ráfaga de 20 (dos escritores)</button>
+      <button id="count" type="button">Contar filas en el libro</button>
+    </div>
+    <div id="send-note" class="note" hidden></div>
+  </section>
+
+  <section aria-labelledby="h-reg">
+    <h2 id="h-reg">4. Registro de pruebas</h2>
+    <div class="row">
+      <button id="export" type="button">Descargar evidencia</button>
+      <button id="persist" type="button">Pedir almacenamiento persistente</button>
+    </div>
+    <ol class="log" id="log"></ol>
+  </section>
+
+  <section aria-labelledby="h-lec">
+    <h2 id="h-lec">5. Lector de códigos</h2>
+    <p><a href="lector-barras.html">Abrir la prueba del lector</a> (segunda corrida: <code>code_128</code>, 30 etiquetas por motor, al sol y en módulo instalado).</p>
+  </section>
+</main>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="app.js"></script>
+</body>
+</html>
