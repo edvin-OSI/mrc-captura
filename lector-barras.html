@@ -86,8 +86,13 @@
 </head>
 <body>
 <main>
+  <p id="back" hidden><a href="./">← Volver a la compuerta</a></p>
   <h1>Prueba de lector de códigos</h1>
   <p class="sub">MRC · etiqueta real, teléfono real. Nada de lo que se lee sale de este teléfono.</p>
+  <script>
+    // Inside the installed compuerta there is no browser back button: give one. Served alone, there is nowhere to go.
+    if (location.pathname.indexOf('/mrc-captura/') === 0) document.getElementById('back').hidden = false;
+  </script>
   <div id="secure" class="note" data-tone="warn" hidden></div>
 
   <section aria-labelledby="h-motor">

@@ -3,7 +3,7 @@
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'dig-mrc-23.1';
+  const APP_VERSION = 'dig-mrc-23.2';
   const EVENT_ID = 'ENSAYO-PWA-01';
   const POSTS = Array.from({ length: 20 }, (_, i) => 'P' + String(i + 1).padStart(2, '0'));
   const PLUMB = Array.from({ length: 21 }, (_, i) => (i / 10).toFixed(1));
@@ -227,7 +227,10 @@
       client_id: CFG.clientId,
       callback: (res) => {
         idToken = res.credential;
-        try { sessionStorage.setItem('mrc-compuerta-token', idToken); } catch (e) { /* ignore */ }
+        // localStorage, not sessionStorage: the field test closes the app, and sessionStorage dies with it
+        // (2026-11-10, EC had to sign in again after airplane mode). The ID token lives one hour.
+        try { localStorage.setItem('mrc-compuerta-token', idToken); } catch (e) { /* ignore */ }
+        $('send-note').hidden = true;
         record('Identificarse', true, tokenEmail(idToken));
         renderWho();
         if (navigator.onLine) sendAll(false);
@@ -235,8 +238,14 @@
       auto_select: true,
     });
     google.accounts.id.renderButton($('gis'), { theme: 'outline', size: 'large', text: 'signin_with', locale: 'es' });
-    try { idToken = sessionStorage.getItem('mrc-compuerta-token'); } catch (e) { idToken = null; }
+    try { idToken = localStorage.getItem('mrc-compuerta-token'); } catch (e) { idToken = null; }
     renderWho();
+    renewSilently();
+  }
+  // With signal and no valid token, ask Google for one; with auto_select it comes back without a tap when it can.
+  function renewSilently() {
+    if (CFG.tokenPrueba || currentToken() || !navigator.onLine) return;
+    if (window.google && google.accounts && google.accounts.id) google.accounts.id.prompt();
   }
 
   // ---------- gateway ----------
@@ -293,6 +302,7 @@
     if (!navigator.onLine) { if (manual) note('send-note', 'Sin señal: queda guardado y se envía al volver la señal.', 'warn'); return; }
     if (!currentToken()) { if (manual) note('send-note', 'Identifícate para enviar. Nada se pierde mientras tanto.', 'warn'); return; }
     sending = true;
+    $('send-note').hidden = true;
     try {
       const posts = (await all('postes')).filter((p) => p.data && p.enviado < p.version);
       if (posts.length) {
@@ -404,7 +414,7 @@
   $('persist').addEventListener('click', () => askPersistence(true));
   // A configuration link opened over an already-open page only changes the hash: load it and restart.
   window.addEventListener('hashchange', () => { if (/^#c=/.test(location.hash)) { loadConfig(); location.reload(); } });
-  window.addEventListener('online', () => { renderStatus(); record('Volvió la señal', true, ''); sendAll(false); });
+  window.addEventListener('online', () => { renderStatus(); record('Volvió la señal', true, ''); renewSilently(); sendAll(false); });
   window.addEventListener('offline', () => { renderStatus(); record('Se fue la señal', true, ''); });
 
   (async () => {

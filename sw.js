@@ -1,5 +1,5 @@
 // DIG-MRC-23 service worker: the shell opens with no signal. Bump CACHE on every published change.
-const CACHE = 'mrc-compuerta-v2';
+const CACHE = 'mrc-compuerta-v3';
 const SHELL = ['./', 'index.html', 'app.js', 'manifest.webmanifest', 'icono-192.png', 'icono-512.png', 'lector-barras.html'];
 
 self.addEventListener('install', (event) => {
